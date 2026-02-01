@@ -34,24 +34,24 @@ No
 >> B1: What is the first instruction that gets executed?
 ljmp   $0x3630,$0xf000e05b
 >> B2: At which physical address is this instruction located?
-0xF0000 + 0xFFF0 = 0xFFFF0
+[f000:fff0] 0xF0000 + 0xFFF0 = 0xFFFF0
 >> B3: Can you guess why the first instruction is like this?
 
 >> B4: What are the next three instructions?
-cmpw   $0xffc8,%cs:(%esi)
-jne    0xd241d0b2
-xor    %edx,%edx
+1. [f000:e05b]    0xfe05b: cmpw   $0xffc8,%cs:(%esi)
+2. [f000:e062]    0xfe062: jne    0xd241d0b0
+3. [f000:e066]    0xfe066: xor    %edx,%edx
 
 ---- QUESTIONS: BOOTLOADER ---- 
 >> B5: How does the bootloader read disk sectors? In particular, what BIOS interrupt
 is used?
-int $0x13
+The bootloader enters the 'read_sector' function, which executes int $0x13 to use BIOS interrupt 0x13 for reading data from the disk.
 
 >> B6: How does the bootloader decides whether it successfully finds the Pintos kernel?
-Read the partition table on each system hard disk and scan for a partition of type 0x20, which is the type that is used for a Pintos kernel.
+Read the partition table on each system hard disk and scan for a partition of type 0x20 (using cmpb   $0x75,0x20(%esp,%eax,1) for comparison), which is the type that is used for a Pintos kernel.
 
 >> B7: What happens when the bootloader could not find the Pintos kernel?
-The bootloader gives up loading kernel, prints the error message "Not found" and notifies BIOS that boot failed using int $0x18.
+The bootloader first search all of the partitions and if the Pintos kernel does not exist, the bootloader gives up loading Pintos kernel, prints the error message "Not found" and notifies BIOS that boot failed using int $0x18.
 
 >> B8: At what point and how exactly does the bootloader transfer control to the Pintos kernel?
 The bootloader transfers control to the Pintos kernel after it has located a valid Pintos partition and finished loading all kernel sectors into memory.
@@ -72,7 +72,7 @@ init_page_dir[pd_no(ptov(0))] in hexadecimal format?
 #3  0xc002013d in start () at ../../threads/start.S:180
 
 >> B10.2 what is the return value in hexadecimal format?
-Value returned is $3 = (void *) 0xc0101000
+0xc0101000
 
 >> B10.3 what is the value of expression init_page_dir[pd_no(ptov(0))] in hexadecimal format?
 0x0
@@ -101,10 +101,14 @@ Value returned is $5 = (void *) 0xc0103000
 >> C1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
-
+int KERNEL_SHELL_BUFFER_SIZE： Maximum input length
+char *kernel_shell_buffer: Store input line
+uint8_t c: Record input char
+size_t kernel_shell_buffer_idx: current buffer index
 ---- ALGORITHMS ----
 >> C2: Explain how you read and write to the console for the kernel monitor.
 Read: input_getc () (Retrieves a key from the input buffer. If the buffer is empty, waits for a key to be pressed)
 Write: printf () (Writes formatted output to the console)
 >> C3: Any additional enhancement you implement?
-Handling special input (backspace) is implemented.
+1. Handling special input (backspace) is implemented.
+2. Exceeding maximum number of input will trigger PANIC
