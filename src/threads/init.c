@@ -134,6 +134,59 @@ pintos_init (void)
     run_actions (argv);
   } else {
     // TODO: no command line passed to kernel. Run interactively 
+    int KERNEL_SHELL_BUFFER_SIZE = 1024;
+    char *kernel_shell_buffer = malloc (KERNEL_SHELL_BUFFER_SIZE); 
+    size_t kernel_shell_buffer_idx = 0;
+    if (kernel_shell_buffer == NULL)
+    {
+      PANIC ("Failed to allocate memory for kernel shell buffer");
+    }
+    printf ("CS318> ");
+    for (;;)
+    {
+      uint8_t c = input_getc();
+      if (c == '\n' || c == '\r')
+      {
+        printf ("\n");
+        kernel_shell_buffer[kernel_shell_buffer_idx] = '\0';
+        if (kernel_shell_buffer_idx)
+        {
+          if (strcmp (kernel_shell_buffer, "whoami") == 0)
+          {
+            printf ("Ding Zhao\n");
+          }
+          else if (strcmp (kernel_shell_buffer, "exit") == 0)
+          {
+            break;
+          }
+          else
+          {
+            printf ("invalid command\n");
+          }
+        }
+        kernel_shell_buffer_idx = 0;
+        printf ("CS318> ");
+        continue;
+      }
+      else if (c >= 32 && c <= 126 && kernel_shell_buffer_idx < KERNEL_SHELL_BUFFER_SIZE - 1)
+      {
+        kernel_shell_buffer[kernel_shell_buffer_idx++] = c;
+        printf ("%c", c);
+      }
+      else if ((c == 127 || c == 8) && kernel_shell_buffer_idx > 0)
+      {
+        kernel_shell_buffer_idx--;
+        printf ("\b");
+        printf (" ");
+        printf ("\b");
+        continue;
+      }
+      else
+      {
+        PANIC ("Invalid input character");
+      }
+    }
+    free (kernel_shell_buffer);
   }
 
   /* Finish up. */
